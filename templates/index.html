@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#07080f;
+  --surface:#0e1018;
+  --surface2:#151722;
+  --border:#1e2235;
+  --border2:#2a2f4a;
+  --text:#e8eaf6;
+  --muted:#6b7280;
+  --accent:#4f8ef7;
+  --accent2:#6366f1;
+  --danger:#ef4444;
+  --danger-bg:#1a0a0a;
+  --warn:#f59e0b;
+  --warn-bg:#1a1200;
+  --safe:#22c55e;
+  --safe-bg:#061a0e;
+}
+body{
+  font-family:'Space Grotesk',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:2rem 1rem;
+  position:relative;
+  overflow-x:hidden;
+}
+.grid-bg{
+  position:fixed;inset:0;
+  background-image:linear-gradient(rgba(79,142,247,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(79,142,247,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+.orb{
+  position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;
+}
+.orb1{width:400px;height:400px;background:rgba(79,142,247,0.06);top:-100px;right:-100px;}
+.orb2{width:300px;height:300px;background:rgba(99,102,241,0.05);bottom:-50px;left:-50px;}
+.wrap{
+  width:100%;max-width:640px;
+  position:relative;z-index:1;
+}
+.header{text-align:center;margin-bottom:2.5rem;}
+.shield{
+  width:64px;height:64px;margin:0 auto 1.2rem;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1a2a4a,#0e1830);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  animation:float 3s ease-in-out infinite;
+}
+.shield svg{width:32px;height:32px;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+h1{
+  font-size:2rem;font-weight:600;letter-spacing:-0.5px;
+  background:linear-gradient(135deg,#e8eaf6,#4f8ef7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.subtitle{color:var(--muted);font-size:0.9rem;margin-top:0.4rem;letter-spacing:0.3px;}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:2rem;
+  margin-bottom:1.2rem;
+}
+.input-row{display:flex;gap:0.75rem;align-items:stretch;}
+.url-input{
+  flex:1;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  padding:0.85rem 1rem;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.85rem;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.url-input::placeholder{color:var(--muted);}
+.url-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,0.1);}
+.btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:12px;
+  padding:0.85rem 1.5rem;
+  color:#fff;font-family:'Space Grotesk',sans-serif;
+  font-size:0.9rem;font-weight:500;
+  cursor:pointer;white-space:nowrap;
+  transition:opacity 0.2s,transform 0.1s;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.btn:hover{opacity:0.9;}
+.btn:active{transform:scale(0.97);}
+.btn.loading{opacity:0.7;cursor:not-allowed;}
+.scan-icon{width:16px;height:16px;transition:transform 0.3s;}
+.btn.loading .scan-icon{animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Result card */
+.result-card{
+  border-radius:20px;padding:1.75rem 2rem;
+  margin-bottom:1.2rem;
+  animation:slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  border:1px solid;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.result-card.PHISHING{
+  background:var(--danger-bg);
+  border-color:rgba(239,68,68,0.3);
+}
+.result-card.SAFE{
+  background:var(--safe-bg);
+  border-color:rgba(34,197,94,0.3);
+}
+.result-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;}
+.result-icon{
+  width:48px;height:48px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.PHISHING .result-icon{background:rgba(239,68,68,0.15);}
+.SAFE .result-icon{background:rgba(34,197,94,0.15);}
+.result-icon svg{width:24px;height:24px;}
+.result-label{font-size:1.3rem;font-weight:600;letter-spacing:-0.3px;}
+.PHISHING .result-label{color:var(--danger);}
+.SAFE .result-label{color:var(--safe);}
+.result-url{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.75rem;color:var(--muted);
+  word-break:break-all;margin-top:0.2rem;
+}
+.divider{height:1px;background:var(--border);margin:1rem 0;}
+.checks{display:flex;flex-direction:column;gap:0.5rem;}
+.check-item{
+  display:flex;align-items:center;gap:0.75rem;
+  padding:0.6rem 0.85rem;
+  border-radius:10px;
+  font-size:0.85rem;
+  animation:fadeIn 0.3s ease forwards;
+  opacity:0;
+}
+@keyframes fadeIn{to{opacity:1}}
+.check-item.safe{background:rgba(34,197,94,0.06);color:#86efac;}
+.check-item.danger{background:rgba(239,68,68,0.08);color:#fca5a5;}
+.check-item.warn{background:rgba(245,158,11,0.08);color:#fcd34d;}
+.check-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.check-item.safe .check-dot{background:var(--safe);}
+.check-item.danger .check-dot{background:var(--danger);}
+.check-item.warn .check-dot{background:var(--warn);}
+
+/* Confidence bar */
+.confidence{margin-top:1rem;}
+.conf-label{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;}
+.conf-track{height:6px;background:var(--border2);border-radius:99px;overflow:hidden;}
+.conf-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(0.34,1.56,0.64,1);}
+.PHISHING .conf-fill{background:linear-gradient(90deg,#ef4444,#dc2626);}
+.SAFE .conf-fill{background:linear-gradient(90deg,#22c55e,#16a34a);}
+.SAFE .conf-track{background:rgba(34,197,94,0.15);}
+.footer{text-align:center;margin-top:1.5rem;color:var(--muted);font-size:0.78rem;}
+.footer span{color:var(--accent);font-weight:500;}
+
+.tag-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;}
+.tag{
+  font-size:0.72rem;padding:0.25rem 0.6rem;border-radius:99px;
+  font-family:'JetBrains Mono',monospace;
+  background:var(--surface2);border:1px solid var(--border2);color:var(--muted);
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="shield">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <polyline points="9 12 11 14 15 10"/>
+      </svg>
+    </div>
+    <h1>PhishGuard</h1>
+    <p class="subtitle">AI-powered phishing URL detection</p>
+  </div>
+
+  <div class="card">
+    <form method="POST" id="scanForm">
+      <div class="input-row">
+        <input class="url-input" type="text" name="url" id="urlInput"
+          placeholder="https://example.com" required
+          value="{{ url if url else '' }}"/>
+        <button class="btn" type="submit" id="scanBtn">
+          <svg class="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Scan
+        </button>
+      </div>
+      <div class="tag-row">
+        <span class="tag">VirusTotal</span>
+        <span class="tag">Google Safe Browsing</span>
+        <span class="tag">WHOIS</span>
+        <span class="tag">ML Model</span>
+      </div>
+    </form>
+  </div>
+
+  {% if result %}
+  <div class="result-card {{ result }}">
+    <div class="result-header">
+      <div class="result-icon">
+        {% if result == 'PHISHING' %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+        {% endif %}
+      </div>
+      <div>
+        <div class="result-label">
+          {% if result == 'PHISHING' %}Phishing Detected{% else %}URL Looks Safe{% endif %}
+        </div>
+        <div class="result-url">{{ url }}</div>
+      </div>
+    </div>
+
+    {% if details %}
+    <div class="divider"></div>
+    <div class="checks">
+      {% for tag, msg in details %}
+      <div class="check-item {{ tag }}" style="animation-delay: {{ loop.index0 * 0.08 }}s">
+        <div class="check-dot"></div>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if ml_prob is defined and result != 'SAFE' or (result == 'SAFE' and details|length > 1) %}
+    <div class="confidence">
+     <div class="conf-label">
+      <span id="confLabel">{% if result == 'PHISHING' %}Threat Alert{% else %}No Threat Confidence{% endif %}</span>
+      <span id="confPct">0%</span>
+     </div>
+     <div class="conf-track">
+        <div class="conf-fill" id="confFill" style="width:0%"></div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    Built with <span>PhishGuard</span> · ML + API hybrid detection
+  </div>
+</div>
+
+<script>
+document.getElementById('scanForm').addEventListener('submit', function(){
+  const btn = document.getElementById('scanBtn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<svg class="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Scanning...';
+});
+
+{% if result and ml_prob is defined %}
+const isPhishing = "{{ result }}" === "PHISHING";
+const dangerCount = {{ details | selectattr('0', 'equalto', 'danger') | list | length }};
+const warnCount = {{ details | selectattr('0', 'equalto', 'warn') | list | length }};
+const safeCount = {{ details | selectattr('0', 'equalto', 'safe') | list | length }};
+const totalChecks = dangerCount + warnCount + safeCount;
+
+let displayProb;
+if(isPhishing){
+  displayProb = Math.min(60 + (dangerCount * 20) + (warnCount * 8), 99);
+} else {
+  if(dangerCount === 0){
+    displayProb = Math.min(75 + (safeCount * 8) - (warnCount * 5), 99);
+  } else {
+    displayProb = Math.min(50 + (safeCount * 8) - (warnCount * 5), 99);
+  }
+}
+
+displayProb = Math.max(displayProb, 10);
+const fill = document.getElementById('confFill');
+const pct = document.getElementById('confPct');
+if(fill && pct){
+  setTimeout(()=>{
+    fill.style.width = Math.min(displayProb, 100) + '%';
+    let current = 0;
+    const target = Math.min(displayProb, 100);
+    const timer = setInterval(()=>{
+      current = Math.min(current + 2, target);
+      pct.textContent = Math.round(current) + '%';
+      if(current >= target) clearInterval(timer);
+    }, 20);
+  }, 400);
+}
+{% endif %}
+</script>
+<canvas id="starCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:0;"></canvas>
+<script>
+const canvas = document.getElementById('starCanvas');
+const ctx = canvas.getContext('2d');
+
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resize();
+window.addEventListener('resize',resize);
+
+const PARTICLE_COUNT = 80;
+const CONNECTION_DIST = 140;
+const MOUSE_RADIUS = 120;
+const SPEED = 0.4;
+
+let mouse = {x: -9999, y: -9999};
+document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+class Dot {
+  constructor(){this.reset(true);}
+  reset(init){
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.vx = (Math.random()-0.5) * SPEED;
+    this.vy = (Math.random()-0.5) * SPEED;
+    this.r = Math.random() * 1.5 + 0.8;
+  }
+  update(){
+    // Mouse attraction
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if(dist < MOUSE_RADIUS){
+      const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.03;
+      this.vx += dx * force;
+      this.vy += dy * force;
+    }
+    // Speed limit
+    const spd = Math.sqrt(this.vx*this.vx+this.vy*this.vy);
+    if(spd > 2){this.vx = this.vx/spd*2; this.vy = this.vy/spd*2;}
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Bounce off edges
+    if(this.x < 0){this.x=0;this.vx*=-1;}
+    if(this.x > canvas.width){this.x=canvas.width;this.vx*=-1;}
+    if(this.y < 0){this.y=0;this.vy*=-1;}
+    if(this.y > canvas.height){this.y=canvas.height;this.vy*=-1;}
+  }
+  draw(){
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(79,142,247,0.8)';
+    ctx.fill();
+  }
+}
+
+const dots = Array.from({length: PARTICLE_COUNT}, () => new Dot());
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Draw connections
+  for(let i=0;i<dots.length;i++){
+    for(let j=i+1;j<dots.length;j++){
+      const dx=dots[i].x-dots[j].x;
+      const dy=dots[i].y-dots[j].y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<CONNECTION_DIST){
+        const alpha=(1-dist/CONNECTION_DIST)*0.35;
+        ctx.beginPath();
+        ctx.moveTo(dots[i].x,dots[i].y);
+        ctx.lineTo(dots[j].x,dots[j].y);
+        ctx.strokeStyle=`rgba(79,142,247,${alpha})`;
+        ctx.lineWidth=0.6;
+        ctx.stroke();
+      }
+    }
+    // Connect to mouse
+    const mdx=dots[i].x-mouse.x;
+    const mdy=dots[i].y-mouse.y;
+    const mdist=Math.sqrt(mdx*mdx+mdy*mdy);
+    if(mdist<MOUSE_RADIUS){
+      const alpha=(1-mdist/MOUSE_RADIUS)*0.6;
+      ctx.beginPath();
+      ctx.moveTo(dots[i].x,dots[i].y);
+      ctx.lineTo(mouse.x,mouse.y);
+      ctx.strokeStyle=`rgba(99,102,241,${alpha})`;
+      ctx.lineWidth=0.8;
+      ctx.stroke();
+    }
+  }
+
+  // Draw dots
+  dots.forEach(d=>{d.update();d.draw();});
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
