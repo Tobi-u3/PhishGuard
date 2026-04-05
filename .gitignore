@@ -1,2 +1,9 @@
-phishguard_model.pkl
+.env
+phishing_full.csv
+phishing_site_urls.csv
 malicious_phish.csv
+phishguard_model.pkl
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+phisguard-env/
